@@ -125,6 +125,9 @@ const Profile = () => {
     );
   }
 
+  const myEmployeeRecord = employees.find(emp => emp.userId?._id === user.id);
+  const myManagerId = myEmployeeRecord?.assignedHR?._id;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -369,6 +372,7 @@ const Profile = () => {
                   {employees.filter(emp => emp.userId?._id !== user.id).map((emp) => {
                     const isAssignedToMe = emp.assignedHR?._id === user.id;
                     const isAssignedToOther = emp.assignedHR && emp.assignedHR?._id !== user.id;
+                    const isMyManager = myManagerId && emp.userId?._id === myManagerId;
 
                     return (
                       <tr key={emp._id} className="hover:bg-slate-50 dark:bg-zinc-800/50/50 transition-colors">
@@ -392,6 +396,10 @@ const Profile = () => {
                               <ShieldAlert size={12} />
                               Taken by {emp.assignedHRProfile?.firstName || 'another HR'}
                             </button>
+                          ) : isMyManager ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                              Your Manager
+                            </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
                               Unassigned
@@ -412,6 +420,13 @@ const Profile = () => {
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-400 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700 rounded-xl cursor-pointer hover:bg-slate-100 dark:bg-zinc-800 transition-all"
                             >
                               Details
+                            </button>
+                          ) : isMyManager ? (
+                            <button 
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-400 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700 rounded-xl cursor-not-allowed opacity-70"
+                              disabled
+                            >
+                              Manager
                             </button>
                           ) : (
                             <button 
