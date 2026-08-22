@@ -55,6 +55,8 @@ const getMyProfile = async (req, res) => {
 const updateMyProfile = async (req, res) => {
     try {
         const allowedFields = [
+            "firstName",
+            "lastName",
             "phone",
             "address",
             "profilePicture",

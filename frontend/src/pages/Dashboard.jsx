@@ -11,19 +11,28 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     attendanceStatus: 'Loading...',
     pendingLeaves: 0,
-    unreadNotifications: 0
+    unreadNotifications: 0,
+    recentActivity: []
   });
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         let leavesData = [];
+        let myLeavesData = [];
         let notificationsData = [];
         let attendanceData = [];
 
         try {
           const leavesRes = await apiClient.get(user.role === 'hr' ? '/leaves/all' : '/leaves/my');
           leavesData = leavesRes.data;
+          
+          if (user.role === 'hr') {
+            const myLeavesRes = await apiClient.get('/leaves/my');
+            myLeavesData = myLeavesRes.data;
+          } else {
+            myLeavesData = leavesData;
+          }
         } catch (err) {
           if (err.response?.status !== 404) {
             console.error('Failed to fetch leaves', err);
@@ -64,10 +73,53 @@ const Dashboard = () => {
           }
         }
 
+        let activities = [];
+
+        attendanceData.forEach(record => {
+            if (record.checkIn) {
+                activities.push({
+                    id: `att-in-${record._id}`,
+                    title: 'Checked In',
+                    time: new Date(record.checkIn),
+                    icon: Calendar,
+                    color: 'text-brand-600 dark:text-brand-400',
+                    bg: 'bg-brand-100 dark:bg-brand-900/30'
+                });
+            }
+            if (record.checkOut) {
+                activities.push({
+                    id: `att-out-${record._id}`,
+                    title: 'Checked Out',
+                    time: new Date(record.checkOut),
+                    icon: Calendar,
+                    color: 'text-slate-600 dark:text-slate-400',
+                    bg: 'bg-slate-100 dark:bg-slate-900/30'
+                });
+            }
+        });
+
+        myLeavesData.forEach(record => {
+            const statusLower = (record.status || '').toLowerCase();
+            activities.push({
+                id: `leave-${record._id}`,
+                title: `Leave application ${statusLower}`,
+                time: new Date(record.updatedAt || record.createdAt),
+                icon: Briefcase,
+                color: statusLower === 'approved' ? 'text-emerald-600 dark:text-emerald-400' : 
+                       statusLower === 'rejected' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400',
+                bg: statusLower === 'approved' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 
+                    statusLower === 'rejected' ? 'bg-rose-100 dark:bg-rose-900/30' : 'bg-amber-100 dark:bg-amber-900/30'
+            });
+        });
+
+        activities.sort((a, b) => b.time - a.time);
+        const recentActivity = activities.slice(0, 3);
+
         setStats({
           attendanceStatus: todayStatus,
           pendingLeaves,
-          unreadNotifications: unreadNotifs
+          unreadNotifications: unreadNotifs,
+          recentActivity
         });
       } catch (err) {
         console.error('Failed to load dashboard data', err);
@@ -149,25 +201,30 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-4">
-            <div className="flex gap-4 items-start p-4 rounded-xl bg-slate-50/50 dark:bg-zinc-800/30 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-zinc-700">
-              <div className="h-10 w-10 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
-                <Calendar size={20} />
+            {stats.recentActivity && stats.recentActivity.length > 0 ? (
+              stats.recentActivity.map((activity) => {
+                const Icon = activity.icon;
+                const isToday = activity.time.toDateString() === new Date().toDateString();
+                const timeString = activity.time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const dateString = isToday ? `Today at ${timeString}` : `${activity.time.toLocaleDateString()} ${timeString}`;
+
+                return (
+                  <div key={activity.id} className="flex gap-4 items-start p-4 rounded-xl bg-slate-50/50 dark:bg-zinc-800/30 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-zinc-700">
+                    <div className={`h-10 w-10 rounded-full ${activity.bg} ${activity.color} flex items-center justify-center shrink-0`}>
+                      <Icon size={20} />
+                    </div>
+                    <div>
+                      <p className="text-slate-800 dark:text-zinc-100 font-medium capitalize">{activity.title}</p>
+                      <p className="text-slate-500 dark:text-zinc-400 text-sm mt-0.5">{dateString}</p>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-4 text-center text-slate-500 dark:text-zinc-400 border border-dashed border-slate-200 dark:border-zinc-700 rounded-xl">
+                No recent activity found.
               </div>
-              <div>
-                <p className="text-slate-800 dark:text-zinc-100 font-medium">Checked In successfully</p>
-                <p className="text-slate-500 dark:text-zinc-400 text-sm mt-0.5">Today at 09:00 AM</p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4 items-start p-4 rounded-xl bg-slate-50/50 dark:bg-zinc-800/30 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-zinc-700">
-              <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                <Briefcase size={20} />
-              </div>
-              <div>
-                <p className="text-slate-800 dark:text-zinc-100 font-medium">Leave application approved</p>
-                <p className="text-slate-500 dark:text-zinc-400 text-sm mt-0.5">Yesterday</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
