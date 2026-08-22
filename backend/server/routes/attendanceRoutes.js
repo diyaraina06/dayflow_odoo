@@ -14,12 +14,12 @@ const {
 
 const router = express.Router();
 
-// Employee
-router.post("/check-in", protect, authorize("employee"), checkIn);
+// Employee / HR
+router.post("/check-in", protect, authorize("employee", "hr"), checkIn);
 
-router.post("/check-out", protect, authorize("employee"), checkOut);
+router.post("/check-out", protect, authorize("employee", "hr"), checkOut);
 
-router.get("/my", protect, authorize("employee"), getMyAttendance);
+router.get("/my", protect, authorize("employee", "hr"), getMyAttendance);
 
 // HR
 router.get("/all", protect, authorize("hr"), getAllAttendance);

@@ -82,7 +82,10 @@ const getMyLeaves = async (req, res) => {
 
 const getAllLeaves = async (req, res) => {
     try {
-        const leaves = await Leave.find()
+        const assignedEmployees = await Employee.find({ assignedHR: req.user._id });
+        const employeeIds = assignedEmployees.map(emp => emp._id);
+
+        const leaves = await Leave.find({ employeeId: { $in: employeeIds } })
             .populate({
                 path: "employeeId",
                 populate: {

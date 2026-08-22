@@ -144,7 +144,10 @@ const getMyAttendance = async (req, res) => {
 // GET ALL ATTENDANCE - HR ONLY
 const getAllAttendance = async (req, res) => {
     try {
-        const attendance = await Attendance.find()
+        const assignedEmployees = await Employee.find({ assignedHR: req.user._id });
+        const employeeIds = assignedEmployees.map(emp => emp._id);
+
+        const attendance = await Attendance.find({ employeeId: { $in: employeeIds } })
             .populate({
                 path: "employeeId",
                 populate: {

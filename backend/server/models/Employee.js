@@ -9,6 +9,12 @@ const employeeSchema = new mongoose.Schema(
             unique: true
         },
 
+        assignedHR: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
+
         firstName: {
             type: String,
             required: true,
@@ -70,6 +76,21 @@ const employeeSchema = new mongoose.Schema(
             deductions: {
                 type: Number,
                 default: 0
+            }
+        },
+
+        leaveBalance: {
+            sick: {
+                type: Number,
+                default: 10
+            },
+            casual: {
+                type: Number,
+                default: 10
+            },
+            earned: {
+                type: Number,
+                default: 15
             }
         },
 

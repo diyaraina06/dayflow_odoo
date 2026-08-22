@@ -29,16 +29,34 @@ const createPayroll = async (req, res) => {
             });
         }
 
-        const employee = await Employee.findById(employeeId);
-
-        if (!employee) {
+        const User = require("../models/User");
+        const user = await User.findOne({ employeeId: employeeId });
+        
+        if (!user) {
             return res.status(404).json({
-                message: "Employee not found"
+                message: "User not found with this Employee ID"
             });
         }
 
+        const employee = await Employee.findOne({ userId: user._id });
+
+        if (!employee) {
+            return res.status(404).json({
+                message: "Employee profile not found for this user"
+            });
+        }
+
+        // Verify that the employee is assigned to this HR
+        if (!employee.assignedHR || employee.assignedHR.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "You are not authorized to manage payroll for this employee. You must claim them first."
+            });
+        }
+
+        const employeeObjId = employee._id;
+
         const existingPayroll = await Payroll.findOne({
-            employeeId,
+            employeeId: employeeObjId,
             month,
             year
         });
@@ -56,7 +74,7 @@ const createPayroll = async (req, res) => {
         );
 
         const payroll = await Payroll.create({
-            employeeId,
+            employeeId: employeeObjId,
             month,
             year,
             basicSalary,
@@ -118,7 +136,11 @@ const getMyPayroll = async (req, res) => {
 // HR views all payroll
 const getAllPayroll = async (req, res) => {
     try {
-        const payroll = await Payroll.find()
+        // Find employees assigned to the logged-in HR
+        const assignedEmployees = await Employee.find({ assignedHR: req.user._id });
+        const employeeIds = assignedEmployees.map(emp => emp._id);
+
+        const payroll = await Payroll.find({ employeeId: { $in: employeeIds } })
             .populate({
                 path: "employeeId",
                 populate: {
