@@ -2,7 +2,8 @@ const express = require("express");
 
 const {
     getMyNotifications,
-    markAsRead
+    markAsRead,
+    markAllAsRead
 } = require("../controllers/notificationController");
 
 const {
@@ -21,6 +22,12 @@ router.put(
     "/:id/read",
     protect,
     markAsRead
+);
+
+router.put(
+    "/read-all",
+    protect,
+    markAllAsRead
 );
 
 module.exports = router;
